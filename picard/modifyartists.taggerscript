@@ -1,0 +1,22 @@
+$noop(Set the album artist to the artist if it's not set)
+$set(_sortartist,$if2(%artistsort%,%artist%))
+$if($not(%albumartist%),$set(albumartist,%artist%))
+$if($not(%albumartistsort%),$set(albumartistsort,%albumartist%))
+$noop("Replace multiartists separator (e.g. &, feat., ,) with a semicolon")
+$set(artist,$rreplace(%artist%,\\s*\(\,|&|ft\\.|feat\\.\)\\s*,; ))
+$set(albumartist,$rreplace(%albumartist%,\\s*\(\,|&|ft\\.|feat\\.\)\\s*,; ))
+$set(albumartistsort,$rreplace(%albumartistsort%,\\s*\(\,|&|ft\\.|feat\\.\)\\s*,; ))
+
+$noop("Remove (single) from album title")
+$set(album,$rreplace(%album%,\\s*\(\,single\)\\s*,""))
+
+$noop("Remove spaces at the end of the artist, album artist and album")
+$set(artist,$rreplace(%artist%,\\s{2\,}, ))
+$set(albumartist,$rreplace(%albumartist%,\\s{2\,}, ))
+$set(albumartistsort,$rreplace(%albumartistsort%,\\s{2\,}, ))
+
+$noop("Try to remove unsynced lyrics")
+$if(
+    $eq($rsearch(%lyrics%, \\[\(\\d{2\,}:\)?\\d{2}:\\d{2}\\.\\d{2\,3}\\]),0),
+    $unset(%lyrics%)
+)
