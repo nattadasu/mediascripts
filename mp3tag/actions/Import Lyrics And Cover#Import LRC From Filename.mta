@@ -2,3 +2,8 @@
 T=14
 F=UNSYNCEDLYRICS
 1=%_filename%.lrc
+
+[#1]
+T=14
+F=LYRICS
+1=%_filename%.lrc
