@@ -1,0 +1,2 @@
+*.mta               linguist-language=ini       linguist-detectable
+*.taggerscript      linguist-language=dart     -linguist-detectable  # faux highlight
