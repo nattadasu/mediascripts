@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "*.mta": "ini"
+        "*.mta": "ini",
+        "*.gs": "javascript"
     }
 }
