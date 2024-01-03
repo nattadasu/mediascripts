@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "phw.tagger-script"
+        "phw.tagger-script",
+        "EditorConfig.EditorConfig"
     ]
 }
