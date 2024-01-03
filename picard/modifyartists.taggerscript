@@ -1,4 +1,4 @@
-$noop(Set the album artist to the artist if it's not set)
+$noop("Set the album artist to the artist if it's not set")
 $set(_sortartist,$if2(%artistsort%,%artist%))
 $if($not(%albumartist%),$set(albumartist,%artist%))
 $if($not(%albumartistsort%),$set(albumartistsort,%albumartist%))
