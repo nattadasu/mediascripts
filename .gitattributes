@@ -1,3 +1,4 @@
 *.mta               linguist-language=ini       linguist-detectable
-*.taggerscript      linguist-language=dart     -linguist-detectable  # faux highlight
-*.mte               linguist-language=dart     -linguist-detectable  # faux highlight
+# faux highlight
+*.taggerscript      linguist-language=dart     -linguist-detectable
+*.mte               linguist-language=dart     -linguist-detectable
