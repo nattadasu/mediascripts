@@ -1,0 +1,26 @@
+$noop("Merge Artists field to Artist and Sort Artist if Applicable")
+$noop("Check if artists field is not empty")
+$if($gte($lenmulti(%artists%),0),
+    $noop("Combine artists to a string with ; as separator")
+    $set(artist,$join(%artists%,; ))
+    $set(artistsort,$join(%artists%,; )),
+    $if($not(%albumartist%),$set(albumartist,%artist%))
+    $if($not(%albumartistsort%),$set(albumartistsort,%albumartist%))
+    $noop("Replace multiartists separator e.g. &, feat., , with a semicolon")
+    $set(artist,$rreplace(%artist%,^\\s*\(\,|&|ft\\.|feat\\.\)\\s*\$,; )))
+$set(albumartist,$rreplace(%albumartist%,\\s*\(\,|&|ft\\.|feat\\.\)\\s*,; ))
+
+$noop("Unset artists sortings, this is because the writer of the script uses
+       First Last format rather than Last, First")
+$unset(artistsort)
+$unset(albumartistsort)
+
+$noop("Clear ''[standalone recording]'' from album title")
+$set(album,$rreplace(%album%,\\s*\\[standalone recording\\]\\s*,%title%))
+$noop("Clear Single from album title")
+$set(album,$rreplace(%album%,\\s*\\\(\\s*\(S|s\)ingle\\s*\\\)\\s*,))
+
+$noop("If the file is MP3, copy lyrics to LYRICS tag")
+$if($and($eq(%_extension%,mp3),
+         $ne(%LYRICS%,"")),
+    $set(lyrics,%LYRICS%))
