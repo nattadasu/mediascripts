@@ -27,12 +27,12 @@ Function Set-FolderIcon {
     ForEach ($Folder in $Folders) {
         # Check if the folder has a desktop.ini file
         $DesktopIni = Join-Path -Path $Folder.FullName -ChildPath 'desktop.ini'
-        
+
         If (Test-Path -Path $DesktopIni) {
             Write-Host "Setting icon for $Folder" -ForegroundColor Yellow
             # Make the folder a system folder
-            attrib +s $Folder.FullName
-            
+            attrib +r $Folder.FullName
+
             # Read the content of the desktop.ini file
             $Content = Get-Content -Path $DesktopIni
 
