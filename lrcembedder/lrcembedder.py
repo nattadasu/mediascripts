@@ -69,25 +69,25 @@ def uncolorize(text: str) -> str:
     """
     return re.sub(r'\033\[\d+(?:;\d+)*m', '', text)
 
-def reprint(text: str = "", log_path: str = log_path):
+def reprint(text: str = "", end: str = "\n"):
     """
     Print text to stdout and log file
 
     :param text: text to print
     :type text: str
-    :param log_path: log file path
-    :type log_path: str
+    :param end: end of line
+    :type end: str
     """
     if len(text) > 0:
         now = datetime.now()
         date = colorize(now.strftime("%Y-%m-%d"), color='blue')
         time = colorize(now.strftime("%H:%M:%S"), color='green')
-        text = f'[{date} {time}] {text}'
-    sys.stdout.write(text + '\n')
+        text = f'[{date} {time}] {text}' if end == "\n" else text
+    sys.stdout.write(text + end)
     if len(text) == 0:
         return
     with open(log_path, 'a') as file:
-        file.write(uncolorize(text) + '\n')
+        file.write(uncolorize(text) + end)
 
 print = reprint
 
