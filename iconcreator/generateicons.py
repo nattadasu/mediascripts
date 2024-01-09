@@ -5,7 +5,13 @@ import os
 from math import ceil
 
 # Replace if necessary
-magick_path: str = os.path.join("C:\\", "Program Files", "ImageMagick-7.1.1-Q16-HDRI", "magick.exe")
+if system() == "Linux":
+    magick_path: str = subprocess.run(["which", "magick"], capture_output=True).stdout.decode("utf-8").strip()
+elif system() == "Darwin":
+    magick_path: str = subprocess.run(["which", "magick"], capture_output=True).stdout.decode("utf-8").strip()
+elif system() == "Windows":
+    magick_path: str = os.path.join(os.getenv("ProgramFiles"), "ImageMagick-7.1.1-Q16-HDRI", "magick.exe")
+
 if not os.path.exists(magick_path):
     print("ImageMagick not found")
     sys.exit(1)
@@ -26,6 +32,11 @@ def convert_png_to_ico(path: str, gravity: str = "center", resize: int = 256,
                     f"{resize}x{resize}", "-background", background, "-extent", f"{resize}x{resize}",
                     new_path])
     return new_path
+
+def convert_ico_to_icns(path: str) -> str:
+    """Converts an ico image to an icns for macOS"""
+    new_path = path.replace(".ico", ".icns")
+    subprocess.run([magick_path, "convert", path, new_path])
     return new_path
 
 def delete_png(path: str, png_generated: str | bool = False) -> None:
@@ -46,6 +57,38 @@ IconResource={folder_icon},0
 """)
 
 
+def set_gnome_folder_icon(*path: str) -> None:
+    """Sets a folder icon for GNOME"""
+    folder_icon = "poster.png" if os.path.exists(os.path.join(*path, "poster.ico")) else "folder.png"
+    subprocess.run(["gio", "set", "-t", "string", os.path.join(*path), "metadata::custom-icon", folder_icon])
+
+
+def set_kde_folder_icon(*path: str) -> None:
+    """Sets a folder icon for KDE"""
+    folder_icon = "poster.png" if os.path.exists(os.path.join(*path, "poster.ico")) else "folder.png"
+    subprocess.run(["kioclient5", "setIcon", os.path.join(*path), folder_icon])
+
+
+def set_lxde_folder_icon(*path: str) -> None:
+    """Sets a folder icon for LXDE"""
+    folder_icon = "poster.png" if os.path.exists(os.path.join(*path, "poster.ico")) else "folder.png"
+    subprocess.run(["pcmanfm", "-w", os.path.join(*path), folder_icon])
+
+
+def set_lxqt_folder_icon(*path: str) -> None:
+    """Sets a folder icon for LXQt"""
+    folder_icon = "poster.png" if os.path.exists(os.path.join(*path, "poster.ico")) else "folder.png"
+    subprocess.run(["pcmanfm-qt", "-w", os.path.join(*path), folder_icon])
+
+
+def set_macos_folder_icon(*path: str) -> None:
+    """Sets a folder icon for macOS"""
+    folder_icon = "poster.ico" if os.path.exists(os.path.join(*path, "poster.ico")) else "folder.ico"
+    folder_icon = convert_ico_to_icns(os.path.join(*path, folder_icon))
+    subprocess.run(["SetFile", "-a", "C", os.path.join(*path)])
+    subprocess.run(["SetFile", "-a", "V", os.path.join(*path, folder_icon)])
+
+
 def set_windows_folder_icon(*path: str) -> None:
     """Sets a folder icon for Windows"""
     folder_icon = "poster.ico" if os.path.exists(os.path.join(*path, "poster.ico")) else "folder.ico"
@@ -62,6 +105,26 @@ def refresh_folder(*path: str) -> None:
 def configure_folder_icon(*path: str) -> None:
     """Configures folder icon for all platforms"""
     match system():
+        case "Linux":
+            print("Linux detected, setting folder icon")
+            # check if GNOME or KDE
+            if os.path.exists("/usr/bin/gio"):
+                print("GTK-based DE detected")
+                set_gnome_folder_icon(*path)
+            elif os.path.exists("/usr/bin/kioclient5"):
+                print("KDE detected")
+                set_kde_folder_icon(*path)
+            elif os.path.exists("/usr/bin/pcmanfm-qt"):
+                print("PCManFM-Qt detected, most likely LXQt")
+                set_lxqt_folder_icon(*path)
+            elif os.path.exists("/usr/bin/pcmanfm"):
+                print("PCManFM detected, most likely LXDE")
+                set_lxde_folder_icon(*path)
+            else:
+                print("Unsupported DE")
+                sys.exit(1)
+        case "Darwin":
+            set_macos_folder_icon(*path)
         case "Windows":
             set_windows_folder_icon(*path)
         case _:
