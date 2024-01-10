@@ -275,7 +275,19 @@ def construct_sylt(lyrics: list[Lyric]) -> SYLT:
 
     return SYLT(encoding=3, lang='eng', desc='', text=tuples)
 
-def fix_lyrics(text: str, use_cr: bool = True) -> str:
+
+def remove_timestamp_for_itunes(lyrics: str) -> str:
+    """
+    Remove timestamp from lyrics for iTunes
+
+    :param lyrics: lyrics text
+    :type lyrics: str
+    :return: lyrics text without timestamp
+    :rtype: str
+    """
+    return re.sub(timestamp_pattern, '', lyrics)
+
+def fix_lyrics(text: str, use_cr: bool = True, itunes: bool = False) -> str:
     """
     Fix lyrics text to be properly formatted
 
@@ -283,6 +295,8 @@ def fix_lyrics(text: str, use_cr: bool = True) -> str:
     :type text: str
     :param use_cr: whether to use CRLF instead of LF
     :type use_cr: bool, defaults to True
+    :param itunes: remove timestamp for iTunes
+    :type itunes: bool, defaults to False
     :return: fixed lyrics text
     :rtype: str
     """
@@ -292,6 +306,9 @@ def fix_lyrics(text: str, use_cr: bool = True) -> str:
     if '\r' not in text and use_cr:
         # Replace LF with CRLF
         text = text.replace('\n', '\r\n')
+    elif '\r' in text and not use_cr:
+        # Replace CRLF with LF
+        text = text.replace('\r\n', '\n')
 
     # format lrcs
     is_sync = check_sync_or_unsync(text, is_content=True)
@@ -315,12 +332,19 @@ def fix_lyrics(text: str, use_cr: bool = True) -> str:
             print('      ...') if len(lyrics) > 3 else None
         text = construct_lyrics(lyrics)
     # clear empty lines
-    text = re.sub(r'((?:\r\n)+\r\n)', r'\r\n', text)
+    if '\r\n' in text:
+        text = re.sub(r'((?:\r\n)+\r\n)', r'\r\n', text)
+    else:
+        text = re.sub(r'((?:\n)+\n)', r'\n', text)
+
+    if itunes:
+        text = remove_timestamp_for_itunes(text)
 
     return text
 
 
-def export_lyrics_to_file(path: str, fmt: str = "lrc", force_overwrite: bool = False, compat: bool = True) -> bool:
+def export_lyrics_to_file(path: str, fmt: str = "lrc",
+                          force_overwrite: bool = False, compat: bool = True) -> bool:
     """
     Export lyrics to file
 
@@ -403,13 +427,17 @@ def export_lyrics_to_file(path: str, fmt: str = "lrc", force_overwrite: bool = F
 
     return True
 
-
-def import_lyrics_from_file(path: str, compat: bool = True) -> bool:
+def import_lyrics_from_file(path: str, compat: bool = True,
+                            itunes: bool = False) -> bool:
     """
     Import lyrics from file
 
     :param path: audio file path
     :type path: str
+    :param compat: use CRLF EOL for Windows apps
+    :type compat: bool
+    :param itunes: remove timestamp for iTunes
+    :type itunes: bool
     :return: True if success
     """
 
@@ -449,7 +477,7 @@ def import_lyrics_from_file(path: str, compat: bool = True) -> bool:
         lyrics = file.read()
 
     # fix lyrics
-    lyrics = fix_lyrics(lyrics, use_cr=compat)
+    lyrics = fix_lyrics(lyrics, use_cr=compat, itunes=itunes)
 
     # write lyrics to audio file
     if type(audio) is ID3:
@@ -476,7 +504,9 @@ def import_lyrics_from_file(path: str, compat: bool = True) -> bool:
     return True
 
 
-def main(user_input: str | None = None, overwrite: bool | None = None, loop: int = 0, windows_compat: bool | None = None) -> dict[str, int]:
+def main(user_input: str | None = None, overwrite: bool | None = None,
+         loop: int = 0, windows_compat: bool | None = None,
+         itunes_compat: bool | None = None) -> dict[str, int]:
     if loop == 0:
         user_input = user_input or input('Enter folder path: ')
         if not os.path.exists(user_input):
@@ -492,6 +522,11 @@ def main(user_input: str | None = None, overwrite: bool | None = None, loop: int
             windows_compat = True
         else:
             windows_compat = False
+        itunes_compat = input('Remove timestamp on embedded lyrics, if you manage your music library with iTunes? (y/N): ')
+        if itunes_compat is True or (type(itunes_compat) is str and itunes_compat.lower() == 'y'):
+            itunes_compat = True
+        else:
+            itunes_compat = False
     else:
         buff = io.StringIO()
         sys.stdout = buff
@@ -535,14 +570,16 @@ def main(user_input: str | None = None, overwrite: bool | None = None, loop: int
                     sys.exit(1)
                 print()
             else:
-                print(f'Skipped {file} (not supported file format)')
+                print(f'Skipped {path} (not supported file format)')
                 print()
 
     if loop == 1:
+        print()
         return fmt
 
     print("Do final check... This might take a while")
-    fmt = main(user_input=user_input, overwrite=overwrite, loop=1, windows_compat=windows_compat)
+    fmt = main(user_input=user_input, overwrite=overwrite, loop=1,
+               windows_compat=windows_compat, itunes_compat=itunes_compat)
     sys.stdout = sys.__stdout__
     print("Final formatting done\n")
 
@@ -556,7 +593,9 @@ def main(user_input: str | None = None, overwrite: bool | None = None, loop: int
             print(' (not formatable)', end='')
             not_formatable += value
         print()
-    print(f'\nFixed {total} files out of {expected} files, {not_formatable} files are not formatable, {expected - total - not_formatable} files are skipped')
+    print()
+    print(f'Fixed {total} files out of {expected} files, {not_formatable} files are not formatable, {expected - total - not_formatable} files are skipped')
+    print(f"See log file at {log_path}")
     sys.exit(0)
 
 
