@@ -4,10 +4,9 @@ from typing import Literal as Lit
 from datetime import datetime, timedelta
 from time import sleep
 
-ANILIST_API_URL = "https://graphql.anilist.co"
 ANIME_TAG_TO_FIND = "food"
 
-
+ANILIST_API_URL = "https://graphql.anilist.co"
 FORMATS = Lit["TV", "TV_SHORT", "MOVIE", "SPECIAL", "OVA", "ONA", "MUSIC",
               "MANGA", "NOVEL", "ONE_SHOT"]
 STATUS = Lit["FINISHED", "RELEASING", "NOT_YET_RELEASED", "CANCELLED", "HIATUS"]
@@ -85,6 +84,11 @@ def create_query(mediatype: MEDIA_TYPE = "ANIME",
           tags {
             name
             rank
+          }
+          airingSchedule {
+            pageInfo {
+              total
+            }
           }
         }
       }
@@ -197,7 +201,9 @@ def check_anime_airs_on_ramadhan(anime: dict) -> bool:
             end_date = start_date
         else:
             end_date = start_date
-            ep = anime["episodes"] or 12
+            ep = anime["episodes"] or anime["airingSchedule"]["pageInfo"]["total"]
+            if ep == 0 or ep is None:
+                ep = 12
             if ep != 1:
                 end_date += timedelta(days=7 * ep)
     else:
@@ -242,7 +248,7 @@ def main():
             stop = False
             #if "food" tag rank is less than 50, skip
             for tag in anime["tags"]:
-                if tag["name"] == "food" and tag["rank"] < 50:
+                if tag["name"] == ANIME_TAG_TO_FIND and tag["rank"] < 50:
                     stop = True
             if stop:
                 continue
