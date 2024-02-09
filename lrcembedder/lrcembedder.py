@@ -308,7 +308,10 @@ def fix_lyrics(text: str, use_cr: bool = True, itunes: bool = False) -> str:
         text = text.replace('\n', '\r\n')
     elif '\r' in text and not use_cr:
         # Replace CRLF with LF
-        text = text.replace('\r\n', '\n')
+        text = text.replace('\r', '')
+
+    print("    Clearing MP3Tag artifact, if any")
+    text = text.replace("eng||", "")
 
     # format lrcs
     is_sync = check_sync_or_unsync(text, is_content=True)
@@ -538,9 +541,9 @@ def main(user_input: str | None = None, overwrite: bool | None = None,
         for file in files:
             expected += 1
             fmt[file.rsplit('.', 1)[1]] = fmt.get(file.rsplit('.', 1)[1], 0) + 1
+            path = os.path.join(root, file)
             if file.endswith(mp4_exts) or file.endswith('.mp3') or file.endswith('.flac'):
                 try:
-                    path = os.path.join(root, file)
                     print(f'Processing {path}...')
                     exp_status = export_lyrics_to_file(path, force_overwrite=overwrite, compat=windows_compat)
                     print("  Exported lyrics to file") if exp_status else print("  Skipped exporting lyrics")
@@ -554,7 +557,6 @@ def main(user_input: str | None = None, overwrite: bool | None = None,
                 print()
             elif file.endswith('.lrc') or file.endswith('.txt'):
                 try:
-                    path = os.path.join(root, file)
                     print(f"Processing {path}...")
                     with open(path, 'r') as f:
                         content = f.read()
