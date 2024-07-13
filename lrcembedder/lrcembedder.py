@@ -15,7 +15,7 @@ from mutagen.flac import FLAC
 now = datetime.now()
 log_path = os.path.join(os.getcwd(), f'lrcembedder_{now.strftime("%Y%m%d_%H%M%S")}.log')
 mp4_exts = ('.m4a', '.m4b', '.m4p', '.m4r', '.mp4', '.aac', '.alac')
-timestamp_pattern = re.compile(r'\[(\d{2}):(\d{2})\.(\d{2,3})\]')
+timestamp_pattern = re.compile(r'\[(\d{1,2}):(\d{2})\.(\d{2,3})\]')
 
 
 def colorize(text: str, color: str = 'white', bg: str = 'black', bold: bool = False) -> str:
@@ -105,9 +105,11 @@ class Timestamp:
     milliseconds: int = 0
 
     def __str__(self):
+        # force take first 2 digits of milliseconds
+        millis = str(self.milliseconds).zfill(3)[:2]
         if self.hours > 0:
-            return f'[{self.hours:02d}:{self.minutes:02d}:{self.seconds:02d}.{self.milliseconds:03d}]'
-        return f'[{self.minutes:02d}:{self.seconds:02d}.{self.milliseconds:03d}]'
+            return f'[{self.hours:02d}:{self.minutes:02d}:{self.seconds:02d}.{millis}]'
+        return f'[{self.minutes:02d}:{self.seconds:02d}.{millis}]'
 
     def to_milliseconds(self):
         return self.hours * 3600000 + self.minutes * 60000 + self.seconds * 1000 + self.milliseconds
@@ -155,7 +157,7 @@ class Lyric:
     text: str
 
     def __str__(self):
-        return f'{self.timestamp}{self.text}'
+        return f'{self.timestamp} {self.text}'
 
 
 def check_sync_or_unsync(path_or_content: str, is_content: bool = False) -> SyncStatus | None:
@@ -254,7 +256,7 @@ def construct_lyrics(lyrics: list[Lyric]) -> str:
 
     content = ''
     for lyric in lyrics:
-        content += str(lyric) + '\r\n'
+        content += str(lyric) + '\n'
     return content
 
 
@@ -346,15 +348,12 @@ def fix_lyrics(text: str, use_cr: bool = True, itunes: bool = False) -> str:
     return text
 
 
-def export_lyrics_to_file(path: str, fmt: str = "lrc",
-                          force_overwrite: bool = False, compat: bool = True) -> bool:
+def export_lyrics_to_file(path: str, force_overwrite: bool = False, compat: bool = True) -> bool:
     """
     Export lyrics to file
 
     :param path: audio file path
     :type path: str
-    :param fmt: lyrics format
-    :type fmt: str, defaults to "lrc"
     :param force_overwrite: force overwrite existing file
     :type force_overwrite: bool, defaults to False
     :return: True if success
@@ -407,15 +406,19 @@ def export_lyrics_to_file(path: str, fmt: str = "lrc",
             print("    Please report this issue to the developer")
         return False
 
+    lyrics = synced_lyrics[0] if isinstance(synced_lyrics, list) else synced_lyrics
+    sanity_chk = check_sync_or_unsync(lyrics, True)
+    fmt = "lrc" if sanity_chk == SyncStatus.SYNCED or re.search(r"\[au: ?instrumental\]", lyrics, re.IGNORECASE) else "txt"
+
+
     target_path = path.rsplit('.', 1)[0] + f'.{fmt}'
     if os.path.exists(target_path) and not force_overwrite:
         print(f'  Export: File {target_path} already exists')
         return False
 
     with open(target_path, 'w') as file:
-        check_sync = check_sync_or_unsync(target_path, synced_lyrics or unsynced_lyrics)
+        check_sync = compare_lrc_to_embedded_lrc(target_path, lyrics)
         if synced_lyrics:
-            lyrics = synced_lyrics[0] if type(synced_lyrics) is list else synced_lyrics
             fixed_lyrics = fix_lyrics(lyrics, use_cr=compat)
             match check_sync:
                 case LyricComparisonResult.FILE_IS_SYNC:
@@ -516,17 +519,17 @@ def main(user_input: str | None = None, overwrite: bool | None = None,
             print(f'Folder {user_input} does not exist')
             return
         overwrite = overwrite or input('Overwrite existing lyrics file? (y/N): ')
-        if overwrite is True or (type(overwrite) is str and overwrite.lower() == 'y'):
+        if overwrite is True or (isinstance(overwrite, str) and overwrite.lower() == 'y'):
             overwrite = True
         else:
             overwrite = False
         windows_compat = input('Use Windows CLRF instead of *nix LF? Note for Musicbee user, CRLF will show as 2 separate lines (y/N): ')
-        if windows_compat is True or (type(windows_compat) is str and windows_compat.lower() == 'y'):
+        if windows_compat is True or (isinstance(windows_compat, str) and windows_compat.lower() == 'y'):
             windows_compat = True
         else:
             windows_compat = False
         itunes_compat = input('Remove timestamp on embedded lyrics, if you manage your music library with iTunes? (y/N): ')
-        if itunes_compat is True or (type(itunes_compat) is str and itunes_compat.lower() == 'y'):
+        if itunes_compat is True or (isinstance(itunes_compat, str) and itunes_compat.lower() == 'y'):
             itunes_compat = True
         else:
             itunes_compat = False
@@ -537,7 +540,7 @@ def main(user_input: str | None = None, overwrite: bool | None = None,
     expected, total = 0, 0
     fmt: dict[str, int] = {}
 
-    for root, dirs, files in os.walk(user_input):
+    for root, _, files in os.walk(user_input):
         for file in files:
             expected += 1
             fmt[file.rsplit('.', 1)[1]] = fmt.get(file.rsplit('.', 1)[1], 0) + 1
