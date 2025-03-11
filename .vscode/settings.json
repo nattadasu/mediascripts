@@ -3,5 +3,6 @@
         "*.mta": "ini",
         "*.gs": "javascript",
         "*.mte": "taggerscript"
-    }
+    },
+    "python.analysis.typeCheckingMode": "basic"
 }

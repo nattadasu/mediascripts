@@ -1,0 +1,129 @@
+{
+    "content": "{{MentionType}}",
+    "avatar_url": "{{AvatarUrl}}",
+    "username": "Jellyfin",
+    "embeds": [
+        {
+            "author": {
+                "url": "{{ServerUrl}}",
+                {{#if_equals ItemType 'Episode'}}
+                "name": "Episode Added"
+                {{/if_equals}}
+                {{#if_equals ItemType 'Movie'}}
+                "name": "Movie Added"
+                {{/if_equals}}
+                {{#if_equals ItemType 'Series'}}
+                "name": "Series Added"
+                {{/if_equals}}
+            },
+
+            "url": "{{ServerUrl}}/web/#/details?id={{ItemId}}&serverId={{ServerId}}",
+            {{#if_equals ItemType 'Episode'}}
+            "title": "{{{SeriesName}}} • S{{SeasonNumber}}E{{EpisodeNumber00}}",
+            {{/if_equals}}
+            {{#if_equals ItemType 'Series'}}
+            "title": "{{{Name}}} ({{Year}})
+            {{/if_equals}}
+            {{#if_equals ItemType 'Movie'}}
+            "title": "{{{Name}}} ({{Year}})",
+            {{/if_equals}}
+
+            "description": "{{~#if_equals ItemType 'Episode'~}}
+            **Episode Name:** {{{Name}}}\n
+            {{~/if_equals~}}
+            {{~#if_exist Genres~}}
+            **Genres:** {{{Genres}}}\n
+            {{~/if_exist~}}
+            {{~#if_equals ItemType 'Series'~}}{{~else~}}{{~#if_equals RunTime '00:00:00'~}}{{~else~}}
+            **Runtime:** {{RunTime}}\n
+            {{~/if_equals~}}{{~/if_equals~}}
+            {{~#if_exist AirDate~}}
+            **Air Date:** {{AirDate}}\n
+            {{~/if_exist~}}
+            {{~#if_exist PremiereDate~}}
+            **Premiere Date:** {{PremiereDate}}\n
+            {{~/if_exist~}}
+            {{~#if_equals Overview 'Packed by Bilibili XCoder v2.0.2'~}}{{~else~}}{{~#if_exist Overview~}}
+            **Overview:**\n{{~#if_exist Tagline~}}> ### {{{Tagline}}}\n{{~/if_exist~}}> {{{Overview}}}\n\n
+            {{~/if_exist~}}{{~/if_equals~}}
+
+            {{~#if_exist ServerUrl~}}
+            [**Watch Now** ]({{ServerUrl}}/web/#/details?id={{ItemId}}&serverId={{ServerId}})
+            {{~/if_exist~}}
+
+            {{~#if_exist Provider_tmdb~}}{{~#if_equals ItemType 'Movie'~}}
+            • [**TMDB** ](https://www.themoviedb.org/movie/{{Provider_tmdb}})• [**Letterboxd** ](https://letterboxd.com/imdb/{{Provider_tmdb}})
+            {{~/if_equals~}}
+            {{~#if_equals ItemType 'Series'~}}
+            • [**TMDB** ](https://www.themoviedb.org/tv/{{Provider_tmdb}})
+            {{~/if_equals~}}
+            {{~/if_exist~}}
+
+            {{~#if_exist Provider_anilist~}}
+            • [**AniList** ](https://anilist.co/anime/{{Provider_anilist}})
+            {{~/if_exist~}}
+
+            {{~#if_exist Provider_anidb~}}
+                {{~#if_equals ItemType 'Episode'~}}
+                • [**AniDB** ](https://anidb.net/episode/{{Provider_anidb}})
+                {{~else~}}
+                • [**AniDB** ](https://anidb.net/anime/{{Provider_anidb}})
+                {{~/if_equals~}}
+            {{~/if_exist~}}
+
+            {{~#if_exist Provider_kitsu~}}
+            {{~#if_equals ItemType 'Episode'~}}{{~else~}}
+            • [**Kitsu** ](https://kitsu.io/anime/{{Provider_kitsu}})
+            {{~/if_equals~}}
+            {{~/if_exist~}}
+
+            {{~#if_exist Provider_imdb~}}• [**IMDb** ](https://www.imdb.com/title/{{Provider_imdb}})• [**Trakt** ](https://trakt.tv/{{~#if_equals ItemType 'Episode'~}}episodes{{~/if_equals~}}{{~#if_equals ItemType 'Movie'~}}movies{{~/if_equals~}}{{~#if_equals ItemType 'Series'~}}shows{{~/if_equals~}}/{{Provider_imdb}}){{~#if_equals ItemType 'Episode'~}}{{~else~}}• [**SIMKL** ](https://api.simkl.com/redirect?to=Simkl&imdb={{Provider_imdb}}){{~/if_equals}}{{~/if_exist~}}
+
+            {{~#if_exist Provider_tvdb~}}
+            {{~#if_equals ItemType 'Episode'~}}
+            • [**TVDB** ](https://www.thetvdb.com/?tab=episode&id={{Provider_tvdb}})
+            {{~/if_equals~}}
+            {{~#if_equals ItemType 'Series'~}}
+            • [**TVDB** ](https://www.thetvdb.com/?tab=series&id={{Provider_tvdb}})
+            {{~/if_equals~}}
+            {{~#if_equals ItemType 'Movie'~}}
+            • [**TVDB** ](https://www.thetvdb.com/movies/{{Provider_tvdbslug}})
+            {{~/if_equals~}}
+            {{~/if_exist~}}
+
+            {{~#if_exist Provider_tvmaze~}}{{~#if_equals ItemType 'Episode'~}}
+            • [**TVmaze** ](https://www.tvmaze.com/episodes/{{Provider_tvmaze}})
+            {{~else~}}
+            • [**TVmaze** ](https://www.tvmaze.com/shows/{{Provider_tvmaze}})
+            {{~/if_equals~}}{{~/if_exist~}}",
+
+            {{~#if_equals ItemType 'Series'~}}
+            {{~else~}}
+            "fields": [
+                {
+                    "name": "Video Details",
+                    "value": "{{~#if_exist Video_0_Width~}}{{Video_0_Width}}x{{Video_0_Height}} ({{Video_0_AspectRatio}}), {{Video_0_Codec}} {{Video_0_VideoRange}}{{~else~}}*Metadata have not been loaded properly*{{~/if_exist~}}",
+                    "inline": true
+                },
+                {
+                    "name": "Audio Language{{#if_exist Audio_1_Language}}s{{/if_exist}}",
+                    "value": "{{#if_exist Audio_0_Language}}{{#if_equals Audio_0_Language 'und'}}*Untagged audio langcode*{{else}}{{Audio_0_Language}}{{#if_exist Audio_0_Default}} (Default){{/if_exist}}{{#if_exist Audio_1_Language}}, {{Audio_1_Language}}{{/if_exist}}{{#if_exist Audio_2_Language}}, {{Audio_2_Language}}{{/if_exist}}{{#if_exist Audio_3_Language}}, {{Audio_3_Language}}{{/if_exist}}{{#if_exist Audio_4_Language}}, {{Audio_4_Language}}{{/if_exist}}{{#if_exist Audio_5_Language}}, {{Audio_5_Language}}{{/if_exist}}{{#if_exist Audio_6_Language}}, ...{{/if_exist}}{{/if_equals}}{{else}}*Metadata have not been loaded properly*{{/if_exist}}",
+                    "inline": true
+                },
+                {
+                    "name": "Subtitle Language{{#if_exist Subtitle_1_Language}}s{{/if_exist}}",
+                    "value": "{{~#if_exist Video_0_Width~}}{{~#if_exist Subtitle_0_Language~}}{{~#if_equals Subtitle_0_Language 'und'~}}*Untagged subtitle language*{{~else~}}{{Subtitle_0_Language}}{{~#if_exist Subtitle_0_Default~}} (Default){{~/if_exist~}}{{~#if_exist Subtitle_1_Language~}}, {{Subtitle_1_Language}}{{~/if_exist~}}{{~#if_exist Subtitle_2_Language~}}, {{Subtitle_2_Language}}{{~/if_exist~}}{{~#if_exist Subtitle_3_Language~}}, {{Subtitle_3_Language}}{{~/if_exist~}}{{~#if_exist Subtitle_4_Language~}}, {{Subtitle_4_Language}}{{~/if_exist~}}{{~#if_exist Subtitle_5_Language~}}, {{Subtitle_5_Language}}{{~/if_exist~}}{{~#if_exist Subtitle_6_Language~}}, ...{{~/if_exist~}}{{~/if_equals~}}{{~else~}}*hardsubbed/RAW*{{~/if_exist~}}{{~else~}}*Metadata have not been loaded properly*{{~/if_exist~}}",
+                    "inline": true
+                }
+            ],
+            {{~/if_equals~}}
+
+            "footer": {
+                "text": "{{{ServerName}}} ",
+                "icon_url": "{{AvatarUrl}}"
+            },
+            "timestamp": "{{{Timestamp}}}",
+            "color": 9526971
+        }
+    ]
+}

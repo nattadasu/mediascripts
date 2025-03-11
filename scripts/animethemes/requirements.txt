@@ -1,0 +1,4 @@
+defusedxml
+requests
+beautifulsoup4
+tqdm
